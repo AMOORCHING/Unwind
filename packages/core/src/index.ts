@@ -33,6 +33,16 @@ export { fork } from "./fork.js";
 
 export { Unwind } from "./unwind.js";
 
+// CLI
+export {
+  createProgram,
+  listRuns,
+  inspectRun,
+  compensateRun,
+  forkRun,
+  formatCompensationSummary,
+} from "./cli.js";
+
 // Adapters
 export type {
   AnthropicToolDefinition,
