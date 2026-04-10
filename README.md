@@ -1,4 +1,4 @@
-# unwind
+# Unwind
 
 Typed effect classification and automatic compensation for LLM agent tool calls. Middleware — not an execution engine. Composes with LangGraph, Temporal, or standalone.
 
