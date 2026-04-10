@@ -29,6 +29,8 @@ export { dispatch } from "./dispatch.js";
 export type { CompensationSummary } from "./compensate.js";
 export { compensate, getCompensationSummary } from "./compensate.js";
 
+export { fork } from "./fork.js";
+
 export { Unwind } from "./unwind.js";
 
 // Adapters

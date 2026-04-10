@@ -5,6 +5,7 @@ import type { UnwindRun } from "./types.js";
 import { defineTool, type ArgSchema, type ToolOptions, type UnwindTool } from "./tool.js";
 import { dispatch as dispatchFn, type ApprovalGate } from "./dispatch.js";
 import { compensate as compensateFn, getCompensationSummary as getSummaryFn, type CompensationSummary } from "./compensate.js";
+import { fork as forkFn } from "./fork.js";
 import {
   toAnthropicTools,
   handleToolUse as handleToolUseFn,
@@ -98,6 +99,11 @@ export class Unwind {
   /** Get a structured summary of compensation results for a run. */
   getCompensationSummary(runId: string): CompensationSummary {
     return getSummaryFn(this.eventStore, runId);
+  }
+
+  /** Fork a run from a checkpoint, replaying events up to fromStep. */
+  fork(parentRunId: string, options: { fromStep: number }): string {
+    return forkFn(this.eventStore, parentRunId, options);
   }
 
   // -------------------------------------------------------------------------

@@ -33,6 +33,20 @@ export async function dispatch(
   args: Record<string, unknown>,
   approvalGate?: ApprovalGate
 ): Promise<unknown> {
+  const run = store.getRun(runId);
+  if (run && run.forkFromStep !== undefined && stepIndex < run.forkFromStep) {
+    const replayed = run.events.find(
+      (e): e is ToolCallCompleted =>
+        e.type === "ToolCallCompleted" && e.stepIndex === stepIndex
+    );
+    if (replayed) {
+      return replayed.result;
+    }
+    throw new Error(
+      `Forked run "${runId}": no replayed result for step ${stepIndex} (fork checkpoint is step ${run.forkFromStep})`
+    );
+  }
+
   const def = tool.definition;
 
   // 1. Generate idempotency key
