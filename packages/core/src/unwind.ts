@@ -5,6 +5,13 @@ import type { UnwindRun } from "./types.js";
 import { defineTool, type ArgSchema, type ToolOptions, type UnwindTool } from "./tool.js";
 import { dispatch as dispatchFn, type ApprovalGate } from "./dispatch.js";
 import { compensate as compensateFn, getCompensationSummary as getSummaryFn, type CompensationSummary } from "./compensate.js";
+import {
+  toAnthropicTools,
+  handleToolUse as handleToolUseFn,
+  type AnthropicToolDefinition,
+  type AnthropicToolUseBlock,
+  type AnthropicToolResultBlock,
+} from "./adapters/anthropic.js";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -91,6 +98,36 @@ export class Unwind {
   /** Get a structured summary of compensation results for a run. */
   getCompensationSummary(runId: string): CompensationSummary {
     return getSummaryFn(this.eventStore, runId);
+  }
+
+  // -------------------------------------------------------------------------
+  // Anthropic SDK adapter
+  // -------------------------------------------------------------------------
+
+  /** Convert Unwind tools to Anthropic SDK tool definitions. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  anthropicTools(tools: UnwindTool<any>[]): AnthropicToolDefinition[] {
+    return toAnthropicTools(tools);
+  }
+
+  /**
+   * Dispatch an Anthropic tool_use block through Unwind and return
+   * a tool_result block ready to feed back into messages.create().
+   */
+  async handleToolUse(
+    runId: string,
+    stepIndex: number,
+    toolUseBlock: AnthropicToolUseBlock,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools: UnwindTool<any>[]
+  ): Promise<AnthropicToolResultBlock> {
+    return handleToolUseFn(
+      this.dispatch.bind(this),
+      runId,
+      stepIndex,
+      toolUseBlock,
+      tools
+    );
   }
 
   /** Close the underlying store. */

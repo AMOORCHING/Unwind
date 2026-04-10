@@ -30,3 +30,18 @@ export type { CompensationSummary } from "./compensate.js";
 export { compensate, getCompensationSummary } from "./compensate.js";
 
 export { Unwind } from "./unwind.js";
+
+// Adapters
+export type {
+  AnthropicToolDefinition,
+  AnthropicToolUseBlock,
+  AnthropicToolResultBlock,
+} from "./adapters/anthropic.js";
+export { toAnthropicTools, handleToolUse } from "./adapters/anthropic.js";
+
+export type { LangGraphToolDefinition } from "./adapters/langgraph.js";
+export {
+  toLangGraphTool,
+  toLangGraphTools,
+  toDynamicStructuredTools,
+} from "./adapters/langgraph.js";
