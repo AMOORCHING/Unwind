@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc --build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "debugger": "npm run dev --workspace=packages/debugger"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
