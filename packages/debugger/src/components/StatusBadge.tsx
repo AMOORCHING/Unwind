@@ -1,23 +1,27 @@
 import type { RunStatus } from "../types";
-import { STATUS_COLORS } from "../utils";
+import { Badge } from "./ui/badge";
+import { cn } from "../lib/utils";
+
+const STATUS_STYLES: Record<string, string> = {
+  active: "bg-uw-muted/10 text-uw-text-secondary border-uw-muted/20",
+  completed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  failed: "bg-red-500/10 text-red-400 border-red-500/20",
+  compensating: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  compensated: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  partially_compensated: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+};
 
 interface StatusBadgeProps {
   status: RunStatus;
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const color = STATUS_COLORS[status] || "#6B6B80";
-
   return (
-    <span
-      className="inline-block px-2 py-0.5 font-mono text-sm"
-      style={{
-        color,
-        background: `${color}18`,
-        borderRadius: 4,
-      }}
+    <Badge
+      variant="status"
+      className={cn("font-mono", STATUS_STYLES[status])}
     >
-      {status}
-    </span>
+      {status.replace("_", " ")}
+    </Badge>
   );
 }

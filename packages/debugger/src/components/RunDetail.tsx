@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { ArrowLeft, Copy, GitFork, AlertTriangle } from "lucide-react";
 import type {
   UnwindRun,
   UnwindEvent,
@@ -10,10 +11,33 @@ import type {
   CompensationFailed,
   EffectClass,
 } from "../types";
-import { truncateId, copyToClipboard, EFFECT_EXPLANATIONS, DURATION_BAR_COLORS } from "../utils";
+import {
+  truncateId,
+  copyToClipboard,
+  EFFECT_EXPLANATIONS,
+  DURATION_BAR_COLORS,
+} from "../utils";
+import { cn } from "../lib/utils";
 import { EffectBadge } from "./EffectBadge";
 import { StatusBadge } from "./StatusBadge";
 import { CopyButton } from "./CopyButton";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { ScrollArea } from "./ui/scroll-area";
+import { Separator } from "./ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface RunDetailProps {
   run: UnwindRun;
@@ -98,14 +122,17 @@ function getCompensationSummaryLine(rows: ToolCallRow[]): string | null {
 
 export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [forkStep, setForkStep] = useState<number>(0);
+  const [forkStep, setForkStep] = useState<string>("0");
 
   const rows = useMemo(() => buildToolCallRows(run.events), [run.events]);
   const maxDuration = useMemo(
     () =>
       Math.max(
         1,
-        ...rows.map((r) => r.completed?.durationMs ?? r.compensationCompleted?.durationMs ?? 0)
+        ...rows.map(
+          (r) =>
+            r.completed?.durationMs ?? r.compensationCompleted?.durationMs ?? 0
+        )
       ),
     [rows]
   );
@@ -119,7 +146,10 @@ export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
     return getCompensationSummaryLine(rows);
   }, [run.status, rows]);
 
-  const selectedRow = selectedIdx !== null ? rows.find((r) => r.stepIndex === selectedIdx) : null;
+  const selectedRow =
+    selectedIdx !== null
+      ? rows.find((r) => r.stepIndex === selectedIdx)
+      : null;
 
   const completedStepIndices = useMemo(
     () => rows.filter((r) => r.completed).map((r) => r.stepIndex),
@@ -128,7 +158,9 @@ export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
 
   useEffect(() => {
     if (completedStepIndices.length > 0) {
-      setForkStep(completedStepIndices[completedStepIndices.length - 1]);
+      setForkStep(
+        String(completedStepIndices[completedStepIndices.length - 1])
+      );
     }
   }, [completedStepIndices]);
 
@@ -161,62 +193,46 @@ export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
 
   return (
     <div
-      className="flex flex-col h-screen"
-      style={{ background: "#0A0A0F" }}
+      className="flex flex-col h-screen bg-uw-bg"
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >
       {/* Header bar */}
-      <div
-        className="flex items-center justify-between px-4 py-3 gap-4 flex-wrap"
-        style={{ borderBottom: "1px solid #1E1E2E", background: "#12121A" }}
-      >
+      <div className="flex items-center justify-between px-4 py-3 gap-4 flex-wrap bg-uw-surface border-b border-uw-border shadow-uw-sm">
         <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={onBack}
-            style={{
-              color: "#6B6B80",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 16,
-              padding: "0 4px",
-            }}
-          >
-            ←
-          </button>
-          <span
-            className="font-mono text-sm cursor-pointer"
-            style={{ color: "#E2E2E8" }}
-            onClick={() => copyToClipboard(run.id)}
-            title="Click to copy full ID"
-          >
-            {truncateId(run.id)}
-          </span>
-          <span className="text-sm" style={{ color: "#6B6B80" }}>
-            {run.agentId}
-          </span>
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className="font-mono text-sm font-medium text-uw-text cursor-pointer hover:text-uw-accent transition-colors"
+                onClick={() => copyToClipboard(run.id)}
+              >
+                {truncateId(run.id)}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Click to copy full ID</TooltipContent>
+          </Tooltip>
+
+          <span className="text-sm text-uw-muted">{run.agentId}</span>
           <StatusBadge status={run.status} />
+
           {run.parentRunId && (
-            <span className="text-sm" style={{ color: "#6B6B80" }}>
-              forked from{" "}
+            <span className="text-sm text-uw-muted flex items-center gap-1.5">
+              <GitFork className="h-3 w-3" />
+              from{" "}
               <button
                 onClick={() => onNavigateToRun(run.parentRunId!)}
-                className="font-mono"
-                style={{
-                  color: "#7C8AFF",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                  fontSize: "inherit",
-                }}
+                className="font-mono text-uw-accent hover:underline"
               >
                 {truncateId(run.parentRunId)}
               </button>
             </span>
           )}
         </div>
+
         <div className="flex items-center gap-2 flex-wrap">
           {run.status === "failed" && (
             <CopyButton
@@ -225,80 +241,60 @@ export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
             />
           )}
           {completedStepIndices.length > 0 && (
-            <div className="flex items-center gap-1">
-              <span
-                className="font-mono text-sm px-2 py-1"
-                style={{
-                  color: "#E2E2E8",
-                  background: "#08080D",
-                  border: "1px solid #1E1E2E",
-                  borderRadius: "4px 0 0 4px",
-                  whiteSpace: "nowrap",
-                }}
-              >
+            <div className="flex items-center rounded-md shadow-uw-sm overflow-hidden">
+              <span className="font-mono text-xs px-3 py-1.5 text-uw-text-secondary bg-uw-input border border-uw-border whitespace-nowrap rounded-l-md">
                 unwind fork {truncateId(run.id)} --from-step
               </span>
-              <select
-                value={forkStep}
-                onChange={(e) => setForkStep(Number(e.target.value))}
-                className="font-mono text-sm py-1 px-1"
-                style={{
-                  color: "#E2E2E8",
-                  background: "#08080D",
-                  border: "1px solid #1E1E2E",
-                  borderRadius: 0,
-                  cursor: "pointer",
-                  outline: "none",
-                }}
-              >
-                {completedStepIndices.map((idx) => (
-                  <option key={idx} value={idx}>
-                    {idx}
-                  </option>
-                ))}
-              </select>
-              <button
+              <Select value={forkStep} onValueChange={setForkStep}>
+                <SelectTrigger className="w-14 rounded-none border-x-0 shadow-none h-[30px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {completedStepIndices.map((idx) => (
+                    <SelectItem key={idx} value={String(idx)}>
+                      {idx}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-l-none border-l-0 gap-1.5 shadow-none h-[30px]"
                 onClick={() =>
                   copyToClipboard(
                     `unwind fork ${run.id} --from-step ${forkStep}`
                   )
                 }
-                className="font-mono text-sm px-2 py-1"
-                style={{
-                  color: "#E2E2E8",
-                  background: "#08080D",
-                  border: "1px solid #1E1E2E",
-                  borderRadius: "0 4px 4px 0",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
               >
+                <Copy className="h-3 w-3" />
                 copy
-              </button>
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Two-panel layout */}
-      <div className="flex flex-1 overflow-hidden detail-panels">
-        {/* Left panel — Effect Timeline */}
-        <div
-          className="overflow-y-auto"
-          style={{
-            flex: selectedRow ? "0 0 60%" : "1 1 100%",
-            padding: 16,
-            borderRight: selectedRow ? "1px solid #1E1E2E" : "none",
-            transition: "flex 0ms",
-          }}
-        >
-          {compensationLine && (
-            <div className="mb-4 text-sm" style={{ color: "#6B6B80" }}>
-              {compensationLine}
-            </div>
-          )}
+      {/* Compensation summary banner */}
+      {compensationLine && (
+        <div className="flex items-center gap-2 px-5 py-2 bg-amber-500/5 border-b border-amber-500/10 text-sm text-amber-400">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          {compensationLine}
+        </div>
+      )}
 
-          <div className="flex flex-col" style={{ gap: 8 }}>
+      {/* Two-panel layout */}
+      <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+        {/* Left panel -- Effect Timeline */}
+        <ScrollArea
+          className={cn(
+            "p-4",
+            selectedRow
+              ? "md:w-[58%] border-b md:border-b-0 md:border-r border-uw-border"
+              : "w-full"
+          )}
+        >
+          <div className="flex flex-col gap-2">
             {rows.map((row) => {
               const isSelected = selectedIdx === row.stepIndex;
               const isReplayed =
@@ -309,109 +305,53 @@ export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
                   ? "compensated"
                   : "completed"
                 : "failed";
-              const duration =
-                row.completed?.durationMs ?? 0;
-              const barPct = maxDuration > 0 ? (duration / maxDuration) * 100 : 0;
+              const duration = row.completed?.durationMs ?? 0;
+              const barPct =
+                maxDuration > 0 ? (duration / maxDuration) * 100 : 0;
               const barColor = isReplayed
                 ? "rgba(58,58,68,0.6)"
                 : DURATION_BAR_COLORS[outcome] || "#2D6A4F";
 
               return (
-                <div key={row.tracked.toolCallId}>
+                <div key={row.tracked.toolCallId} className="animate-fade-in">
                   <div
                     onClick={() =>
                       setSelectedIdx(isSelected ? null : row.stepIndex)
                     }
-                    className="cursor-pointer flex flex-col px-2 py-2"
-                    style={{
-                      opacity: isReplayed ? 0.5 : 1,
-                      background: isSelected ? "#14141E" : "transparent",
-                      borderLeft: isSelected
-                        ? "3px solid #7C8AFF"
-                        : "3px solid transparent",
-                      transition: "background-color 120ms ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected)
-                        e.currentTarget.style.background = "#10101A";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected)
-                        e.currentTarget.style.background = "transparent";
-                    }}
+                    className={cn(
+                      "cursor-pointer flex flex-col px-3 py-3 rounded-lg border transition-all duration-150",
+                      isSelected
+                        ? "bg-uw-selected border-uw-accent/30 shadow-uw-glow"
+                        : "bg-uw-surface/40 border-transparent hover:bg-uw-surface hover:border-uw-border-subtle",
+                      isReplayed && "opacity-40"
+                    )}
                   >
                     <div className="flex items-center">
-                      <span
-                        className="font-mono"
-                        style={{
-                          width: 40,
-                          flexShrink: 0,
-                          color: "#6B6B80",
-                          fontSize: 14,
-                        }}
-                      >
+                      <span className="font-mono w-10 shrink-0 text-uw-muted text-sm tabular-nums">
                         #{row.stepIndex}
                       </span>
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span
-                          style={{
-                            color: "#E2E2E8",
-                            fontWeight: 500,
-                            fontSize: 14,
-                          }}
-                        >
+                        <span className="text-uw-text font-medium text-sm">
                           {row.tracked.toolName}
                         </span>
-                        <EffectBadge
-                          effectClass={row.tracked.effectClass}
-                        />
+                        <EffectBadge effectClass={row.tracked.effectClass} />
                         {isReplayed && (
-                          <span
-                            className="inline-block px-1.5 py-0.5 font-mono"
-                            style={{
-                              fontSize: 10,
-                              letterSpacing: "0.08em",
-                              textTransform: "uppercase",
-                              color: "#6B6B80",
-                              background: "#1A1A24",
-                              borderRadius: 4,
-                              lineHeight: "14px",
-                            }}
-                          >
-                            replayed
-                          </span>
+                          <Badge variant="default">replayed</Badge>
                         )}
                       </div>
-                      <span
-                        className="font-mono text-right"
-                        style={{
-                          width: 120,
-                          flexShrink: 0,
-                          color: "#6B6B80",
-                          fontSize: 14,
-                        }}
-                      >
-                        {duration > 0 ? `${duration}ms` : "—"}
+                      <span className="font-mono w-[100px] shrink-0 text-right text-uw-muted text-sm tabular-nums">
+                        {duration > 0 ? `${duration}ms` : "\u2014"}
                       </span>
                     </div>
 
                     {/* Duration bar */}
-                    <div className="flex items-center mt-1.5" style={{ paddingLeft: 40 }}>
-                      <div
-                        style={{
-                          flex: 1,
-                          height: 6,
-                          background: "#1A1A24",
-                          borderRadius: 9999,
-                          overflow: "hidden",
-                        }}
-                      >
+                    <div className="flex items-center mt-2.5 pl-10">
+                      <div className="flex-1 h-1 bg-uw-bg rounded-full overflow-hidden">
                         <div
+                          className="h-full rounded-full transition-all duration-300"
                           style={{
                             width: `${barPct}%`,
-                            height: "100%",
                             background: barColor,
-                            borderRadius: 9999,
                             minWidth: duration > 0 ? 4 : 0,
                           }}
                         />
@@ -419,11 +359,11 @@ export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
                     </div>
                   </div>
 
-                  {/* Compensation sub-row */}
+                  {/* Compensation sub-rows */}
                   {row.compensationCompleted && (
                     <CompensationSubRow
-                      borderColor="#2D6A4F"
-                      text={`↳ compensated: ${row.compensationStarted?.compensationAction ?? "unknown"}`}
+                      variant="success"
+                      text={`compensated: ${row.compensationStarted?.compensationAction ?? "unknown"}`}
                       durationMs={row.compensationCompleted.durationMs}
                     />
                   )}
@@ -431,96 +371,76 @@ export function RunDetail({ run, onBack, onNavigateToRun }: RunDetailProps) {
                     row.compensationFailed.reason ===
                       "append_only_no_compensation" && (
                       <CompensationSubRow
-                        borderColor="#9A7B2F"
-                        text="↳ cannot be undone"
+                        variant="warning"
+                        text="cannot be undone"
                       />
                     )}
                   {row.compensationFailed &&
                     row.compensationFailed.reason ===
                       "destructive_escalation" && (
                       <CompensationSubRow
-                        borderColor="#9A7B2F"
-                        text="↳ cannot be undone"
+                        variant="warning"
+                        text="cannot be undone"
                       />
                     )}
                   {row.compensationFailed &&
                     row.compensationFailed.reason ===
                       "compensation_action_failed" && (
                       <CompensationSubRow
-                        borderColor="#9B3A3A"
-                        text={`↳ compensation failed: ${truncateStr(row.compensationFailed.detail, 80)}`}
+                        variant="error"
+                        text={`compensation failed: ${truncateStr(row.compensationFailed.detail, 80)}`}
                       />
                     )}
                 </div>
               );
             })}
           </div>
-        </div>
+        </ScrollArea>
 
-        {/* Right panel — Detail Inspector */}
+        {/* Right panel -- Detail Inspector */}
         {selectedRow && (
-          <div
-            className="overflow-y-auto"
-            style={{
-              flex: "0 0 40%",
-              padding: 16,
-              background: "#12121A",
-            }}
-          >
+          <ScrollArea className="md:w-[42%] bg-uw-surface/30 p-4">
             <Inspector
               row={selectedRow}
               run={run}
               onNavigateToRun={onNavigateToRun}
             />
-          </div>
+          </ScrollArea>
         )}
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .detail-panels {
-            flex-direction: column !important;
-          }
-          .detail-panels > div {
-            flex: none !important;
-            border-right: none !important;
-            border-bottom: 1px solid #1E1E2E;
-          }
-        }
-      `}</style>
     </div>
   );
 }
 
+const COMP_COLORS: Record<string, { border: string; dot: string }> = {
+  success: { border: "border-l-emerald-500/50", dot: "bg-emerald-400" },
+  warning: { border: "border-l-amber-500/50", dot: "bg-amber-400" },
+  error: { border: "border-l-red-500/50", dot: "bg-red-400" },
+};
+
 function CompensationSubRow({
-  borderColor,
+  variant,
   text,
   durationMs,
 }: {
-  borderColor: string;
+  variant: "success" | "warning" | "error";
   text: string;
   durationMs?: number;
 }) {
+  const colors = COMP_COLORS[variant];
   return (
     <div
-      className="flex items-center"
-      style={{
-        paddingLeft: 48,
-        paddingRight: 8,
-        paddingTop: 4,
-        paddingBottom: 4,
-        borderLeft: `2px solid ${borderColor}`,
-        marginLeft: 48,
-      }}
+      className={cn(
+        "flex items-center py-1.5 pl-14 pr-3 ml-5 border-l-2",
+        colors.border
+      )}
     >
-      <span className="flex-1" style={{ color: "#6B6B80", fontSize: 12 }}>
-        {text}
-      </span>
+      <span
+        className={cn("h-1.5 w-1.5 rounded-full mr-2 shrink-0", colors.dot)}
+      />
+      <span className="flex-1 text-xs text-uw-muted">{text}</span>
       {durationMs !== undefined && (
-        <span
-          className="font-mono"
-          style={{ width: 120, textAlign: "right", color: "#6B6B80", fontSize: 12 }}
-        >
+        <span className="font-mono w-[100px] text-right text-xs text-uw-muted tabular-nums">
           {durationMs}ms
         </span>
       )}
@@ -538,194 +458,165 @@ function Inspector({
   onNavigateToRun: (runId: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 animate-fade-in">
       {/* TOOL CALL */}
-      <Section label="TOOL CALL">
-        <div className="flex items-center gap-2 mb-1">
-          <span style={{ fontSize: 16, fontWeight: 500, color: "#E2E2E8" }}>
-            {row.tracked.toolName}
-          </span>
-          <EffectBadge effectClass={row.tracked.effectClass} />
-        </div>
-        <div className="text-sm mb-3" style={{ color: "#6B6B80" }}>
-          {EFFECT_EXPLANATIONS[row.tracked.effectClass]}
-        </div>
-        <div style={{ height: 1, background: "#1E1E2E" }} className="mb-3" />
-
-        <SectionLabel>ARGUMENTS</SectionLabel>
-        <JsonBlock
-          data={row.tracked.args}
-          stableArgs={row.tracked.stableArgs}
-        />
-
-        <SectionLabel>IDEMPOTENCY KEY</SectionLabel>
-        <span
-          className="font-mono cursor-pointer block mb-3"
-          style={{ fontSize: 11, color: "#6B6B80" }}
-          onClick={() => copyToClipboard(row.tracked.idempotencyKey)}
-          title="Click to copy"
-        >
-          {row.tracked.idempotencyKey}
-        </span>
-
-        <SectionLabel>RESULT</SectionLabel>
-        {row.completed ? (
-          <>
-            <JsonBlock data={row.completed.result} />
-            <span
-              className="font-mono mt-1 inline-block"
-              style={{ color: "#6B6B80", fontSize: 12 }}
-            >
-              {row.completed.durationMs}ms
+      <Card>
+        <CardHeader>
+          <CardTitle>Tool Call</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-semibold text-uw-text">
+              {row.tracked.toolName}
             </span>
-          </>
-        ) : row.failed ? (
-          <div style={{ color: "#C05B5B", fontSize: 14 }}>
-            {row.failed.reason}: {String(row.failed.error)}
+            <EffectBadge effectClass={row.tracked.effectClass} />
           </div>
-        ) : (
-          <span style={{ color: "#6B6B80" }}>pending</span>
-        )}
-      </Section>
+          <p className="text-xs text-uw-muted leading-relaxed">
+            {EFFECT_EXPLANATIONS[row.tracked.effectClass]}
+          </p>
+
+          <Separator />
+
+          <div>
+            <SectionLabel>Arguments</SectionLabel>
+            <JsonBlock
+              data={row.tracked.args}
+              stableArgs={row.tracked.stableArgs}
+            />
+          </div>
+
+          <div>
+            <SectionLabel>Idempotency Key</SectionLabel>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className="font-mono text-2xs text-uw-muted cursor-pointer hover:text-uw-text transition-colors block truncate"
+                  onClick={() => copyToClipboard(row.tracked.idempotencyKey)}
+                >
+                  {row.tracked.idempotencyKey}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Click to copy</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <div>
+            <SectionLabel>Result</SectionLabel>
+            {row.completed ? (
+              <>
+                <JsonBlock data={row.completed.result} />
+                <span className="font-mono text-2xs text-uw-muted mt-1.5 inline-block tabular-nums">
+                  {row.completed.durationMs}ms
+                </span>
+              </>
+            ) : row.failed ? (
+              <div className="text-sm text-uw-error px-3 py-2 bg-red-500/5 rounded-md border border-red-500/10">
+                {row.failed.reason}: {String(row.failed.error)}
+              </div>
+            ) : (
+              <span className="text-sm text-uw-muted">pending</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* COMPENSATION */}
       {(row.compensationStarted ||
         row.compensationCompleted ||
         row.compensationFailed) && (
-        <Section label="COMPENSATION">
-          {row.compensationStarted && (
-            <>
-              <div className="text-sm mb-2" style={{ color: "#E2E2E8" }}>
-                {row.compensationStarted.compensationAction}
-              </div>
-              <SectionLabel>ARGUMENTS</SectionLabel>
-              <JsonBlock data={row.compensationStarted.args} />
-            </>
-          )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Compensation</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {row.compensationStarted && (
+              <>
+                <p className="text-sm font-medium text-uw-text">
+                  {row.compensationStarted.compensationAction}
+                </p>
+                <SectionLabel>Arguments</SectionLabel>
+                <JsonBlock data={row.compensationStarted.args} />
+              </>
+            )}
 
-          {row.compensationCompleted && (
-            <>
-              <div className="text-sm mb-1" style={{ color: "#4A8A6A" }}>
-                succeeded
-              </div>
-              <SectionLabel>RESULT</SectionLabel>
-              <JsonBlock data={row.compensationCompleted.result} />
-              <span
-                className="font-mono mt-1 inline-block"
-                style={{ color: "#6B6B80", fontSize: 12 }}
-              >
-                {row.compensationCompleted.durationMs}ms
-              </span>
-            </>
-          )}
+            {row.compensationCompleted && (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <span className="text-sm text-emerald-400 font-medium">
+                    succeeded
+                  </span>
+                </div>
+                <SectionLabel>Result</SectionLabel>
+                <JsonBlock data={row.compensationCompleted.result} />
+                <span className="font-mono text-2xs text-uw-muted mt-1 inline-block tabular-nums">
+                  {row.compensationCompleted.durationMs}ms
+                </span>
+              </>
+            )}
 
-          {row.compensationFailed && (
-            <>
-              <div className="text-sm mb-1" style={{ color: "#C05B5B" }}>
+            {row.compensationFailed && (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-400" />
+                  <span className="text-sm text-red-400 font-medium">
+                    {row.compensationFailed.reason ===
+                    "compensation_action_failed"
+                      ? "failed"
+                      : "uncompensatable"}
+                  </span>
+                </div>
                 {row.compensationFailed.reason ===
-                "compensation_action_failed"
-                  ? "failed"
-                  : "uncompensatable"}
-              </div>
-              {row.compensationFailed.reason ===
-              "compensation_action_failed" ? (
-                <div style={{ color: "#C05B5B", fontSize: 14 }}>
-                  {row.compensationFailed.detail}
-                </div>
-              ) : (
-                <div
-                  className="px-3 py-2 text-sm"
-                  style={{
-                    borderLeft: "2px solid #9A7B2F",
-                    background: "#18160E",
-                    color: "#E2E2E8",
-                  }}
-                >
-                  {row.compensationFailed.detail}
-                </div>
-              )}
-            </>
-          )}
-        </Section>
+                "compensation_action_failed" ? (
+                  <div className="text-sm text-uw-error px-3 py-2 bg-red-500/5 rounded-md border border-red-500/10">
+                    {row.compensationFailed.detail}
+                  </div>
+                ) : (
+                  <div className="px-3 py-2 text-sm border-l-2 border-l-amber-500/40 bg-amber-500/5 text-uw-text-secondary rounded-r-md">
+                    {row.compensationFailed.detail}
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* CONTEXT */}
-      <Section label="CONTEXT">
-        <ContextLine
-          label="Run ID"
-          value={run.id}
-          mono
-          copyable
-        />
-        <ContextLine label="Agent ID" value={run.agentId} />
-        <ContextLine
-          label="Step index"
-          value={String(row.stepIndex)}
-          mono
-        />
-        {run.parentRunId && run.forkFromStep !== undefined && (
-          <div className="text-sm" style={{ color: "#6B6B80" }}>
-            Forked from{" "}
-            <button
-              onClick={() => onNavigateToRun(run.parentRunId!)}
-              className="font-mono"
-              style={{
-                color: "#7C8AFF",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                fontSize: "inherit",
-              }}
-            >
-              {truncateId(run.parentRunId)}
-            </button>{" "}
-            at step {run.forkFromStep}
-          </div>
-        )}
-      </Section>
-    </div>
-  );
-}
-
-function Section({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div
-        className="mb-2"
-        style={{
-          fontSize: 10,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "#6B6B80",
-          fontWeight: 400,
-        }}
-      >
-        {label}
-      </div>
-      {children}
+      <Card>
+        <CardHeader>
+          <CardTitle>Context</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2.5">
+          <ContextLine label="Run ID" value={run.id} mono copyable />
+          <ContextLine label="Agent ID" value={run.agentId} />
+          <ContextLine
+            label="Step index"
+            value={String(row.stepIndex)}
+            mono
+          />
+          {run.parentRunId && run.forkFromStep !== undefined && (
+            <p className="text-sm text-uw-muted flex items-center gap-1.5">
+              <GitFork className="h-3 w-3" />
+              Forked from{" "}
+              <button
+                onClick={() => onNavigateToRun(run.parentRunId!)}
+                className="font-mono text-uw-accent hover:underline"
+              >
+                {truncateId(run.parentRunId)}
+              </button>{" "}
+              at step {run.forkFromStep}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="mb-1 mt-3"
-      style={{
-        fontSize: 10,
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        color: "#6B6B80",
-        fontWeight: 400,
-      }}
-    >
+    <div className="text-2xs uppercase tracking-widest text-uw-muted font-medium mb-2">
       {children}
     </div>
   );
@@ -740,10 +631,7 @@ function JsonBlock({
 }) {
   if (data === undefined || data === null) {
     return (
-      <div
-        className="font-mono p-3 mb-2"
-        style={{ background: "#08080D", color: "#6B6B80", fontSize: 14 }}
-      >
+      <div className="font-mono p-3 rounded-lg bg-uw-bg text-uw-muted text-sm border border-uw-border-subtle">
         null
       </div>
     );
@@ -751,10 +639,7 @@ function JsonBlock({
 
   if (typeof data !== "object") {
     return (
-      <div
-        className="font-mono p-3 mb-2"
-        style={{ background: "#08080D", color: "#E2E2E8", fontSize: 14 }}
-      >
+      <div className="font-mono p-3 rounded-lg bg-uw-bg text-uw-text text-sm border border-uw-border-subtle">
         {JSON.stringify(data, null, 2)}
       </div>
     );
@@ -764,25 +649,16 @@ function JsonBlock({
   const stableKeys = stableArgs ? new Set(Object.keys(stableArgs)) : null;
 
   return (
-    <pre
-      className="font-mono p-3 mb-2 overflow-x-auto"
-      style={{
-        background: "#08080D",
-        fontSize: 14,
-        margin: 0,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-all",
-      }}
-    >
+    <pre className="font-mono p-3 rounded-lg bg-uw-bg text-sm overflow-x-auto whitespace-pre-wrap break-all m-0 border border-uw-border-subtle leading-relaxed">
       {"{\n"}
       {entries.map(([key, val], i) => {
         const isEphemeral = stableKeys && !stableKeys.has(key);
         return (
-          <span key={key} style={{ opacity: isEphemeral ? 0.4 : 1 }}>
+          <span key={key} className={isEphemeral ? "opacity-30" : ""}>
             {"  "}
-            <span style={{ color: "#E2E2E8" }}>
-              "{key}": {formatJsonValue(val)}
-            </span>
+            <span className="text-blue-400">"{key}"</span>
+            <span className="text-uw-muted">: </span>
+            <span className="text-amber-300">{formatJsonValue(val)}</span>
             {i < entries.length - 1 ? ",\n" : "\n"}
           </span>
         );
@@ -810,20 +686,30 @@ function ContextLine({
   mono?: boolean;
   copyable?: boolean;
 }) {
+  const valueEl = (
+    <span
+      className={cn(
+        "text-uw-text",
+        mono && "font-mono",
+        copyable && "cursor-pointer hover:text-uw-accent transition-colors"
+      )}
+      onClick={copyable ? () => copyToClipboard(value) : undefined}
+    >
+      {value}
+    </span>
+  );
+
   return (
-    <div className="flex items-center gap-2 mb-1 text-sm">
-      <span style={{ color: "#6B6B80" }}>{label}:</span>
-      <span
-        className={mono ? "font-mono" : ""}
-        style={{
-          color: "#E2E2E8",
-          cursor: copyable ? "pointer" : "default",
-        }}
-        onClick={copyable ? () => copyToClipboard(value) : undefined}
-        title={copyable ? "Click to copy" : undefined}
-      >
-        {value}
-      </span>
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-uw-muted whitespace-nowrap">{label}:</span>
+      {copyable ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{valueEl}</TooltipTrigger>
+          <TooltipContent>Click to copy</TooltipContent>
+        </Tooltip>
+      ) : (
+        valueEl
+      )}
     </div>
   );
 }

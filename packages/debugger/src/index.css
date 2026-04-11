@@ -2,21 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background: #0A0A0F;
-  color: #E2E2E8;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  :root {
+    --uw-bg: 240 12% 3%;
+    --uw-surface: 240 14% 6%;
+    --uw-panel: 240 12% 9%;
+    --uw-input: 240 14% 5%;
+    --uw-border: 240 10% 16%;
+    --uw-border-subtle: 240 10% 12%;
+    --uw-hover: 240 14% 11%;
+    --uw-selected: 233 30% 14%;
+    --uw-text: 0 0% 93%;
+    --uw-text-secondary: 240 6% 72%;
+    --uw-muted: 240 6% 46%;
+    --uw-accent: 233 94% 67%;
+    --uw-accent-muted: 233 40% 24%;
+    --uw-error: 0 72% 63%;
+    --uw-success: 152 55% 48%;
+    --uw-warning: 42 80% 58%;
+    --radius: 0.5rem;
+  }
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: hsl(var(--uw-bg));
+    color: hsl(var(--uw-text));
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+    border-color: hsl(var(--uw-border));
+  }
 }
 
 ::-webkit-scrollbar {
@@ -25,14 +50,37 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0F;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E1E2E;
+  background: hsl(var(--uw-border));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2E2E3E;
+  background: hsl(240 10% 24%);
+}
+
+@layer utilities {
+  .shadow-uw-sm {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+  .shadow-uw-md {
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+  .shadow-uw-lg {
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  .shadow-uw-glow {
+    box-shadow:
+      0 0 20px rgba(99, 120, 255, 0.08),
+      0 4px 12px rgba(0, 0, 0, 0.4);
+  }
 }

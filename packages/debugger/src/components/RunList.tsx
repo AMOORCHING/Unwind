@@ -1,7 +1,20 @@
 import { useState, useMemo } from "react";
-import { getRuns, getRunCount } from "../db";
+import { RefreshCw, FolderOpen, Inbox } from "lucide-react";
+import { getRuns } from "../db";
 import type { RunStatus, UnwindRun } from "../types";
-import { truncateId, relativeTime, STATUS_DOT_COLORS } from "../utils";
+import { truncateId, relativeTime } from "../utils";
+import { StatusBadge } from "./StatusBadge";
+import { Button } from "./ui/button";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface RunListProps {
   dbFilename: string;
@@ -10,7 +23,12 @@ interface RunListProps {
   onSelectRun: (run: UnwindRun) => void;
 }
 
-type FilterTab = "all" | "active" | "failed" | "compensated" | "partially_compensated";
+type FilterTab =
+  | "all"
+  | "active"
+  | "failed"
+  | "compensated"
+  | "partially_compensated";
 
 const TABS: { key: FilterTab; label: string; status?: RunStatus }[] = [
   { key: "all", label: "All" },
@@ -47,7 +65,8 @@ export function RunList({
       if (r.status === "active" || r.status === "compensating") counts.active++;
       else if (r.status === "failed") counts.failed++;
       else if (r.status === "compensated") counts.compensated++;
-      else if (r.status === "partially_compensated") counts.partially_compensated++;
+      else if (r.status === "partially_compensated")
+        counts.partially_compensated++;
     }
     return counts;
   }, [allRuns]);
@@ -71,205 +90,112 @@ export function RunList({
     run.events.filter((e) => e.type === "ToolCallTracked").length;
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: "#0A0A0F" }}>
+    <div className="flex flex-col h-screen bg-uw-bg">
       {/* Top bar */}
-      <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: "1px solid #1E1E2E" }}
-      >
-        <div className="flex items-center gap-4">
-          <span
-            className="font-mono text-sm"
-            style={{ color: "#6B6B80" }}
-          >
+      <div className="flex items-center justify-between px-5 py-3 bg-uw-surface/50 border-b border-uw-border">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-sm font-medium text-uw-text">
             unwind
           </span>
-          <span className="text-sm" style={{ color: "#6B6B80" }}>
-            {dbFilename} — {allRuns.length} runs
+          <span className="text-2xs text-uw-muted px-2 py-0.5 rounded-full bg-uw-surface border border-uw-border-subtle">
+            {dbFilename}
+          </span>
+          <span className="text-sm text-uw-muted">
+            {allRuns.length} {allRuns.length === 1 ? "run" : "runs"}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleReload}
-            className="font-mono text-sm px-3 py-1"
-            style={{
-              color: "#E2E2E8",
-              background: "#12121A",
-              border: "1px solid #1E1E2E",
-              borderRadius: "4px",
-              cursor: "pointer",
-              transition: "background-color 120ms ease",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "#10101A")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "#12121A")
-            }
-          >
-            {reloading ? "…" : "Reload"}
-          </button>
-          <button
-            onClick={onChangeFile}
-            className="text-sm"
-            style={{
-              color: "#7C8AFF",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-            }}
-          >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleReload}>
+            <RefreshCw
+              className={`h-3 w-3 mr-1.5 ${reloading ? "animate-spin" : ""}`}
+            />
+            Reload
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onChangeFile}>
+            <FolderOpen className="h-3 w-3 mr-1.5" />
             Change file
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Filter tabs */}
-      <div
-        className="flex gap-0 px-4"
-        style={{ borderBottom: "1px solid #1E1E2E" }}
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className="px-4 py-2 text-sm relative"
-            style={{
-              color: activeTab === tab.key ? "#E2E2E8" : "#6B6B80",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              transition: "color 120ms ease",
-            }}
-          >
-            {tab.label} ({tabCounts[tab.key]})
-            {activeTab === tab.key && (
-              <div
-                className="absolute bottom-0 left-0 right-0 h-px"
-                style={{ background: "#7C8AFF" }}
-              />
-            )}
-          </button>
-        ))}
+      <div className="border-b border-uw-border-subtle bg-uw-bg">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as FilterTab)}
+        >
+          <TabsList>
+            {TABS.map((tab) => (
+              <TabsTrigger key={tab.key} value={tab.key}>
+                {tab.label}
+                <span className="ml-1.5 text-2xs text-uw-muted">
+                  {tabCounts[tab.key]}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Run table */}
-      <div className="flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         {filteredRuns.length === 0 ? (
-          <div className="flex items-center justify-center py-16">
-            <span style={{ color: "#6B6B80" }}>No runs found</span>
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <Inbox className="h-10 w-10 text-uw-muted/50" />
+            <span className="text-sm text-uw-muted">No runs found</span>
           </div>
         ) : (
-          <table className="w-full" style={{ borderCollapse: "collapse" }}>
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "1px solid #1E1E2E",
-                  position: "sticky",
-                  top: 0,
-                  background: "#0A0A0F",
-                  zIndex: 1,
-                }}
-              >
-                <th className="text-left px-4 py-2" style={thStyle}>
-                  STATUS
-                </th>
-                <th className="text-left px-4 py-2" style={thStyle}>
-                  RUN ID
-                </th>
-                <th className="text-left px-4 py-2" style={thStyle}>
-                  AGENT
-                </th>
-                <th className="text-right px-4 py-2" style={thStyle}>
-                  CALLS
-                </th>
-                <th className="text-right px-4 py-2" style={thStyle}>
-                  CREATED
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent sticky top-0 bg-uw-bg z-10">
+                <TableHead className="w-[160px]">Status</TableHead>
+                <TableHead>Run ID</TableHead>
+                <TableHead>Agent</TableHead>
+                <TableHead className="text-right w-[80px]">Calls</TableHead>
+                <TableHead className="text-right w-[100px]">Created</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredRuns.map((run) => (
-                <tr
+                <TableRow
                   key={run.id}
                   onClick={() => onSelectRun(run)}
-                  className="cursor-pointer"
-                  style={{
-                    borderBottom: "1px solid #1E1E2E",
-                    transition: "background-color 120ms ease",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#10101A")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="cursor-pointer group"
                 >
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="inline-block rounded-full"
-                        style={{
-                          width: 8,
-                          height: 8,
-                          background:
-                            STATUS_DOT_COLORS[run.status] || "#6B6B80",
-                        }}
-                      />
-                      <span className="text-sm" style={{ color: "#6B6B80" }}>
-                        {run.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
-                    <span
-                      className="font-mono text-sm"
-                      style={{ color: "#E2E2E8" }}
-                    >
+                  <TableCell>
+                    <StatusBadge status={run.status} />
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-sm font-medium text-uw-text group-hover:text-uw-accent transition-colors">
                       {truncateId(run.id)}
                     </span>
                     {run.parentRunId && (
-                      <span
-                        className="ml-2 text-sm"
-                        style={{ color: "#6B6B80" }}
-                      >
+                      <span className="ml-2 text-2xs text-uw-muted">
                         ↳ from {truncateId(run.parentRunId)}
                       </span>
                     )}
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className="text-sm" style={{ color: "#E2E2E8" }}>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-uw-text-secondary">
                       {run.agentId}
                     </span>
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <span
-                      className="font-mono text-sm"
-                      style={{ color: "#6B6B80" }}
-                    >
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="font-mono text-sm text-uw-muted tabular-nums">
                       {toolCallCount(run)}
                     </span>
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <span className="text-sm" style={{ color: "#6B6B80" }}>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-sm text-uw-muted">
                       {relativeTime(run.createdAt)}
                     </span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 }
-
-const thStyle: React.CSSProperties = {
-  fontSize: 10,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  color: "#6B6B80",
-  fontWeight: 400,
-};

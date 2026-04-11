@@ -1,5 +1,12 @@
 import { useState, useCallback } from "react";
+import { Check, Copy } from "lucide-react";
 import { copyToClipboard } from "../utils";
+import { Button } from "./ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface CopyButtonProps {
   text: string;
@@ -16,20 +23,28 @@ export function CopyButton({ text, label }: CopyButtonProps) {
   }, [text]);
 
   return (
-    <button
-      onClick={handleCopy}
-      className="font-mono text-sm px-2 py-1 flex items-center gap-1.5"
-      style={{
-        color: copied ? "#4A8A6A" : "#E2E2E8",
-        background: "#08080D",
-        border: "1px solid #1E1E2E",
-        borderRadius: 4,
-        cursor: "pointer",
-        transition: "color 120ms ease",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {copied ? "✓ copied" : label}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopy}
+          className="gap-1.5 font-mono"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3 text-emerald-400" />
+              <span className="text-emerald-400">copied</span>
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              {label}
+            </>
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Copy to clipboard</TooltipContent>
+    </Tooltip>
   );
 }

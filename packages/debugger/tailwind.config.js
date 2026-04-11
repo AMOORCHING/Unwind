@@ -5,21 +5,27 @@ export default {
     extend: {
       colors: {
         uw: {
-          bg: "#0A0A0F",
-          panel: "#12121A",
-          border: "#1E1E2E",
-          input: "#08080D",
-          hover: "#10101A",
-          selected: "#14141E",
-          text: "#E2E2E8",
-          muted: "#6B6B80",
-          accent: "#7C8AFF",
-          error: "#C05B5B",
-          success: "#4A8A6A",
+          bg: "hsl(var(--uw-bg))",
+          surface: "hsl(var(--uw-surface))",
+          panel: "hsl(var(--uw-panel))",
+          border: "hsl(var(--uw-border))",
+          "border-subtle": "hsl(var(--uw-border-subtle))",
+          input: "hsl(var(--uw-input))",
+          hover: "hsl(var(--uw-hover))",
+          selected: "hsl(var(--uw-selected))",
+          text: "hsl(var(--uw-text))",
+          "text-secondary": "hsl(var(--uw-text-secondary))",
+          muted: "hsl(var(--uw-muted))",
+          accent: "hsl(var(--uw-accent))",
+          "accent-muted": "hsl(var(--uw-accent-muted))",
+          error: "hsl(var(--uw-error))",
+          success: "hsl(var(--uw-success))",
+          warning: "hsl(var(--uw-warning))",
         },
       },
       fontFamily: {
         sans: [
+          "'Inter'",
           "-apple-system",
           "BlinkMacSystemFont",
           "'Segoe UI'",
@@ -28,12 +34,48 @@ export default {
         mono: ["'JetBrains Mono'", "'Fira Code'", "monospace"],
       },
       fontSize: {
-        xs: "10px",
+        "2xs": "10px",
+        xs: "11px",
         sm: "12px",
-        base: "14px",
-        lg: "16px",
+        base: "13px",
+        lg: "15px",
+        xl: "18px",
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        "uw-sm":
+          "0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)",
+        "uw-md":
+          "0 4px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)",
+        "uw-lg":
+          "0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)",
+        "uw-glow":
+          "0 0 20px rgba(99,120,255,0.08), 0 4px 12px rgba(0,0,0,0.4)",
+      },
+      keyframes: {
+        "pulse-border": {
+          "0%, 100%": { borderColor: "hsl(var(--uw-accent) / 0.4)" },
+          "50%": { borderColor: "hsl(var(--uw-accent) / 0.8)" },
+        },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(4px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        spin: {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
+      },
+      animation: {
+        "pulse-border": "pulse-border 2s ease-in-out infinite",
+        "fade-in": "fade-in 0.2s ease-out",
+        spin: "spin 1s linear infinite",
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
