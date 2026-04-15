@@ -4,7 +4,7 @@ Typed effect classification and automatic compensation for LLM agent tool calls.
 
 When your agent fails at step 6, LangGraph can resume from a checkpoint. Temporal can retry the activity. Neither one refunds the card charge from step 4. Unwind does. You classify each tool call — idempotent, reversible, append-only, destructive — and Unwind handles the rest: idempotency keys, compensation ordering, and a full audit trail of what was undone and what couldn't be.
 
-Middleware, not an execution engine. Composes with LangGraph, Temporal, or raw SDK calls. Read more [here](https://moorching.com/writing/llm-agent-tool-calls-uncompensated-transactions)
+Middleware, not an execution engine. Composes with LangGraph, Temporal, or raw SDK calls. [Read more here](https://moorching.com/writing/llm-agent-tool-calls-uncompensated-transactions)
 
 <p align="center">
   <img src="docs/demo.gif" alt="Unwind trace debugger" width="720" />
